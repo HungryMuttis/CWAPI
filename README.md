@@ -2,37 +2,6 @@
 
 Some very useful tools for devs when creating mods for Content Warning
 
-### Better Console
-If you're making mods and want a better console experience, you can reference this mod's assembly. This lets you use the `Tweaks.Features.BetterConsole.ConsoleCommandAttribute`
-
-This attribute is a better alternative to `Zorro.Core.CLI.ConsoleCommandAttribute` because it handles:
-- Automatic help command generation
-- Optional arguments
-- Command overloading
-
-Usage example:
-```C#
-using Tweaks.Features.BetterConsole; // for all of the classes
-using UnityEngine; // for Debug.Log
-
-namespace PluginNamespace; // your plugin namespace
-
-public class ExampleCommandsClass : ICommandsClass // the class can be named however you like. However, it will appear exactly like you name it in the console
-                                                   // the inheriting of CommandsClass is optional, but it lets for the commands in the class to be enabled or disabled
-{
-    public static bool Enabled => true; // sets if the commands in this class are enabled.
-
-    [ConsoleCommand("The description of what this function does", "The description of the first argument", "The description of the second argument")] // all the information about the function. If an arument description is set to "" (empty), then when the user is writing the argument, its name will not be changed
-    public static void PrintEnteredText(string Text, int Times) // an example function
-    {
-        for (int i = 0; i < Times; i++)
-        {
-            Debug.Log(Text);
-        }
-    }
-}
-```
-
 ### Harmony Patcher
 If you are using harmony to patch your methods, you may also utilize the `Tweaks.Features.HarmonyPatcher` for easier patching of your methods. It removes all of the repeating and also has a way to automatically determine the type of the class you are trying to patch as well as the type of the patcher class  
 Usage example:
@@ -76,7 +45,7 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
 ```
 
 ### Feature Manager
-If you have a lot individual features in your mod, you can also try the `Tweaks.Features.FeatureManager`! It has a method `InitializeFeatures()` which must be called when the mod is loading.
+If you have a lot individual features in your mod, you can also try the `CWAPI.FeatureManager`! It has a method `InitializeFeatures()` which must be called when the mod is loading.
 Features must inherit the `Tweaks.Features.Feature` class and be marked with `Tweaks.Features.FeatureAttribute` for the FeatureManager to find them and register.
 Feature manager automatically handles:
 - Enabling and disabling individual features
