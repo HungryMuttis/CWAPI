@@ -3,10 +3,10 @@
 Some very useful tools for devs when creating mods for Content Warning
 
 ### Harmony Patcher
-If you are using harmony to patch your methods, you may also utilize the `Tweaks.Features.HarmonyPatcher` for easier patching of your methods. It removes all of the repeating and also has a way to automatically determine the type of the class you are trying to patch as well as the type of the patcher class  
+If you are using harmony to patch your methods, you may also utilize the `CWAPI.HarmonyPatcher` for easier patching of your methods. It removes all of the repeating and also has a way to automatically determine the type of the class you are trying to patch as well as the type of the patcher class  
 Usage example:
 ```C#
-using Tweaks.Features; // for the HarmonyPatcher
+using CWAPI; // for the HarmonyPatcher
 
 namespace PluginNamespace; // your plugin namespace
 
@@ -46,7 +46,7 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
 
 ### Feature Manager
 If you have a lot individual features in your mod, you can also try the `CWAPI.FeatureManager`! It has a method `InitializeFeatures()` which must be called when the mod is loading.
-Features must inherit the `Tweaks.Features.Feature` class and be marked with `Tweaks.Features.FeatureAttribute` for the FeatureManager to find them and register.
+Features must inherit the `CWAPI.Feature` class and be marked with `CWAPI.FeatureAttribute` for the FeatureManager to find them and register.
 Feature manager automatically handles:
 - Enabling and disabling individual features
 - Has the option to mark a feature as required
@@ -55,7 +55,7 @@ Usage exaple:
 ```C#
 using BepInEx;
 using BepInEx.Configuration;
-using Tweaks.Features; // for all of the necessary classes
+using CWAPI; // for all of the necessary classes
 
 namespace PluginNamespace; // your plugin namespace
 
@@ -104,7 +104,7 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
 Usage example:
 ```C#
 using MyceliumNetworking;  // mycelium networking for CustomRPCAttribute
-using Tweaks.Features;     // for NetworkComponent class
+using CWAPI;     // for NetworkComponent class
 using UnityEngine;         // for this example to compile
 
 namespace PluginNamespace; // your plugin namespace
@@ -149,7 +149,7 @@ Usage example:
 ```C#
 using BepInEx;             // for BepInPlugin class
 using MyceliumNetworking;  // mycelium networking for CustomRPCAttribute
-using Tweaks.Features;     // for SingletonNetworkComponent class
+using CWAPI;     // for SingletonNetworkComponent class
 using UnityEngine;         // for this example to compile
 
 namespace PluginNamespace; // your plugin namespace
