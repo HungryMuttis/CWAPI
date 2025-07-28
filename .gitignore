@@ -363,7 +363,7 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Thunderstore folder
-HungryMuttis-Tweaks-*/
+HungryMuttis-CWAPI-*/
 
 # Solution
 .sln
