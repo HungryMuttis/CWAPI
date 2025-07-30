@@ -138,7 +138,10 @@ public static PlayerPatch // this is just an example class
 {
     public static void Start_Prefix(Player __instance) // we also need to patch the players start method, to add our network handler to them
     {
-        if (__instance.gameObject.GetComponent<PlayerNetworkHandler>() == null)
+        // do not forget !__instance.ai when dealing with the player
+        // you might think that this class is used only for players you'd be wrong
+        // it is also used for monsters and you should check if the "player" is a monster
+        if (!__instance.ai && __instance.gameObject.GetComponent<PlayerNetworkHandler>() == null)
             __instance.gameObject.AddComponent<PlayerNetworkHandler>();
     }
 }
