@@ -46,21 +46,31 @@ namespace CWAPI
                 });
         }
 
-        public void InitializeFeatures() => Features.ForEach(f =>
+        public bool InitializeFeatures(bool handleExceptions = false) => Features.All(f =>
         {
-            ConfigSection Section = new(Config, f.FeatureName);
-            f.CreateRequiredConfig(Section);
-            f.CreateConfig(Section);
-            if (f.Enabled)
+            try
             {
-                if (f.Required)
-                    Logger.LogInfo($"Feature '{f.FeatureName}' is required. Initializing...");
+                ConfigSection Section = new(Config, f.FeatureName);
+                f.CreateRequiredConfig(Section);
+                f.CreateConfig(Section);
+                if (f.Enabled)
+                {
+                    if (f.Required)
+                        Logger.LogInfo($"Feature '{f.FeatureName}' is required. Initializing...");
+                    else
+                        Logger.LogInfo($"Feature '{f.FeatureName}' is enabled. Initializing...");
+                    f.Initialize();
+                }
                 else
-                    Logger.LogInfo($"Feature '{f.FeatureName}' is enabled. Initializing...");
-                f.Initialize();
+                    Logger.LogInfo($"Feature '{f.FeatureName}' is disabled.");
+                return true;
             }
-            else
-                Logger.LogInfo($"Feature '{f.FeatureName}' is disabled.");
+            catch (Exception ex)
+            {
+                Logger.LogError($"There was an error loading feature '{f.FeatureName}'. Exception: {ex}");
+                if (!handleExceptions) throw;
+                return false;
+            }
         });
     }
 }

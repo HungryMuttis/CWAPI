@@ -1,16 +1,17 @@
 ﻿using MyceliumNetworking;
 using Photon.Pun;
+using Steamworks;
 using UnityEngine;
 
 namespace CWAPI
 {
-    public abstract class NetworkComponent<THandler, TParent> : MonoBehaviour where THandler : NetworkComponent<THandler, TParent> where TParent : class
+    public abstract class NetworkComponent<THandler, TParent> : MonoBehaviour where THandler : NetworkComponent<THandler, TParent> where TParent : MonoBehaviour
     {
         private ManualLogSource? _logger;
         protected abstract BepInEx.Logging.ManualLogSource LogSource { get; }
         protected ManualLogSource Logger => _logger ??= new(LogSource, GetType().Name);
         protected abstract uint MOD_ID { get; }
-        protected TParent? ParentComponent { get; private set; }
+        protected TParent ParentComponent { get; private set; } = default!;
         protected int ViewId { get; private set; }
 
         protected virtual void Awake()
@@ -42,17 +43,32 @@ namespace CWAPI
                 MyceliumNetwork.DeregisterNetworkObject(this, MOD_ID, ViewId);
         }
 
-        protected static bool Send(Player targetPlayer, string methodName, ReliableType reliable, params object[] parameters)
+        protected static bool SendMasked(TParent mask, string methodName, ReliableType reliable, params object[] parameters)
         {
-            THandler handler = targetPlayer.GetComponent<THandler>();
+            THandler handler = mask.GetComponent<THandler>();
             if (handler == null)
             {
-                Debug.LogError($"[{typeof(THandler).Name}] Target player does not have a handler");
+                Debug.LogError($"[{typeof(THandler).Name}] Target '{typeof(TParent).Name}' does not have a handler");
                 return false;
             }
 
             MyceliumNetwork.RPCMasked(handler.MOD_ID, methodName, reliable, handler.ViewId, parameters);
             return true;
         }
+        protected static bool SendTargetMasked(TParent mask, string methodName, CSteamID target, ReliableType reliable, params object[] parameters)
+        {
+            THandler handler = mask.GetComponent<THandler>();
+            if (handler == null)
+            {
+                Debug.LogError($"[{typeof(THandler).Name}] Target player does not have a handler");
+                return false;
+            }
+
+            MyceliumNetwork.RPCTargetMasked(handler.MOD_ID, methodName, target, reliable, handler.ViewId, parameters);
+            return true;
+        }
+
+        protected static bool Send(TParent mask, string methodName, ReliableType reliable, params object[] parameters) => SendMasked(mask, methodName, reliable, parameters);
+        protected static bool Send(TParent mask, string methodName, CSteamID target, ReliableType reliable, params object[] parameters) => SendTargetMasked(mask, methodName, target, reliable, parameters);
     }
 }

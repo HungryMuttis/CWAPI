@@ -2,7 +2,7 @@
 
 Some very useful tools for devs when creating mods for Content Warning
 
-### Harmony Patcher
+## Harmony Patcher
 If you are using harmony to patch your methods, you may also utilize the `CWAPI.HarmonyPatcher` for easier patching of your methods. It removes all of the repeating and also has a way to automatically determine the type of the class you are trying to patch as well as the type of the patcher class  
 Usage example:
 ```C#
@@ -44,7 +44,7 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
 }
 ```
 
-### Feature Manager
+## Feature Manager
 If you have a lot individual features in your mod, you can also try the `CWAPI.FeatureManager`! It has a method `InitializeFeatures()` which must be called when the mod is loading.
 Features must inherit the `CWAPI.Feature` class and be marked with `CWAPI.FeatureAttribute` for the FeatureManager to find them and register.
 Feature manager automatically handles:
@@ -95,16 +95,17 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
         FeatureManager Manager = new(YourPlugin.Logger, Config); // initialize the feature manager
         Manager.RegisterFeaturesFromAssembly(); // find all of the features
         Manager.InitializeFeatures(); // initialize all of the features
+                                      // you can also pass in a boolean to set if you'd like to automatically handle exceptions if any occour in the initializing process
     }
 }
 ```
 
-### NetworkComponents
+## NetworkComponents
 **NetworkComponent<THandler, TParent>** transient abstract class for simpler networking  
 Usage example:
 ```C#
 using MyceliumNetworking;  // mycelium networking for CustomRPCAttribute
-using CWAPI;     // for NetworkComponent class
+using CWAPI;               // for NetworkComponent class
 using UnityEngine;         // for this example to compile
 
 namespace PluginNamespace; // your plugin namespace
@@ -116,9 +117,11 @@ internal class YourNetworkHandler : NetworkComponent<YourNetworkHandler, Player>
     //             in your mod you might not need to write the namespace of the ManualLogSource, but if you get an Ambiguous reference error, add it.
     protected override BepInEx.Logging.ManualLogSource LogSource => YourPlugin.Logger; // change this to your real logger
 
+    // EXAMPLE 1: a function that sets the oxygen of the specified player
     [CustomRPC]
     // the custom RPC you define which is fired for the specific Player (in this case, it depends from TParent) when the SendOxygen calls the Send function
-    public void SetOxygen(float oxygen)
+    // this RPC is executed on all clients on one player
+    void SetOxygen(float oxygen)
     {
         if (ParentComponent == null || ParentComponent.data == null) return;
 
@@ -132,17 +135,34 @@ internal class YourNetworkHandler : NetworkComponent<YourNetworkHandler, Player>
             oxygen // after the first 3 arguments, you can pass your custom arguments that will be available to the SetOxygen function
         );
     }
+
+    // EXAMPLE 2: a function that sets a players visor text to empty for only one client
+    [CustomRPC]
+    // this RPC is executed only on one client, on one player
+    void ClearVisor()
+    {
+        if (ParentComponent == null || ParentComponent.refs == null) return; // check for null to aviod NullReferenceException
+
+        ParentComponent.refs.visor.visorFaceText.text = ""; // set the visor text
+    }
+
+    public static void SendClearVisor(Player targetPlayer, Player player)
+    {
+        // we need to pass in the Player to clear the visor and a Player to select the client
+        // 'player' is used to select the client, while the targetPlayer works like in Send() method
+        SendTarget(targetPlayer, nameof(ClearVisor), player, ReliableType.Reliable);
+    }
 }
 
-public static PlayerPatch // this is just an example class
+public static class PlayerPatch // this is just an example class
 {
     public static void Start_Prefix(Player __instance) // we also need to patch the players start method, to add our network handler to them
     {
         // do not forget !__instance.ai when dealing with the player
-        // you might think that this class is used only for players you'd be wrong
+        // you might think that this class is used only for players but you'd be wrong
         // it is also used for monsters and you should check if the "player" is a monster
-        if (!__instance.ai && __instance.gameObject.GetComponent<PlayerNetworkHandler>() == null)
-            __instance.gameObject.AddComponent<PlayerNetworkHandler>();
+        if (!__instance.ai && __instance.gameObject.GetComponent<YourNetworkHandler>() == null)
+            __instance.gameObject.AddComponent<YourNetworkHandler>();
     }
 }
 ```
@@ -152,7 +172,7 @@ Usage example:
 ```C#
 using BepInEx;             // for BepInPlugin class
 using MyceliumNetworking;  // mycelium networking for CustomRPCAttribute
-using CWAPI;     // for SingletonNetworkComponent class
+using CWAPI;               // for SingletonNetworkComponent class
 using UnityEngine;         // for this example to compile
 
 namespace PluginNamespace; // your plugin namespace
@@ -164,9 +184,11 @@ internal class YourNetworkHandler : SingletonNetworkComponent<YourNetworkHandler
     //             in your mod you might not need to write the namespace of the ManualLogSource, but if you get an Ambiguous reference error, add it.
     protected override BepInEx.Logging.ManualLogSource LogSource => YourPlugin.Logger; // change this to your real logger
 
+    // EXAMPLE 1: setting all of the players health
     [CustomRPC]
     // the custom RPC you define which is fired once when the SendMaxHealth calls the Send function
-    public void SetMaxHealth(float maxHealth)
+    // this RPC is executed on every client (even the one that executed the SendMaxHealth method
+    void SetMaxHealth(float maxHealth)
     {
         Player.PlayerData.maxHealth = maxHealth; // sets the static maxHealth value for this example
         PlayerHandler.instance.playersAlive.ForEach(p => p.data.health = Mathf.Clamp(p.data.health, 0f, maxHealth)); // removes health if the player has more than the maxHealth
@@ -176,6 +198,22 @@ internal class YourNetworkHandler : SingletonNetworkComponent<YourNetworkHandler
         // use the Send function to send the custom RPC
         Send(nameof(SetMaxHealth), ReliableType.Reliable,
             maxHealth // after the first 2 arguments, you can pass your custom arguments that will be available to the SetOxygen function
+        );
+    }
+
+    // EXAMPLE 2: setting the gravity for a selected person
+    [CustomRPC]
+    // this RPC is only executed on one client
+    void SetGravity(float gravity)
+    {
+        // Player.localPlayer is the same as the player passed in to SendGravity
+        Player.localPlayer.refs.controller.gravity = gravity;
+    }
+    public static void SendGravity(Player player, float gravity)
+    {
+        // a steamId is retrieved from the player object, then the RPC is executed on the specified client
+        SendTarget(nameof(SetGravity), player, ReliableType.Reliable,
+            gravity
         );
     }
 }
@@ -189,7 +227,7 @@ public class YourPlugin : BepInPlugin // this is only an example, not a full cla
 }
 ```
 
-Code to generate your MOD_ID:
+### Code to generate your MOD_ID:
 ```C#
 using System.Security.Cryptography;
 using System.Text;
